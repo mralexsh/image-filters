@@ -7,13 +7,13 @@
 #include <math.h>
 #include <limits.h>
 #include <float.h>
-
+#include <time.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
 
 
-
+#define FILTERS_AMOUNT 6
 #define PPM_VERSION_SIZE 80
 #define MASK_SIZE 3
 
@@ -266,6 +266,7 @@ int filter_image(int width,
 
 int main() {
 
+  char out_file_name[80];
   char* input_file_name = "123.ppm";
   //char* input_file_name = "Lena.ppm";
   PPM_Struct ppm = read_ppm_file(input_file_name);
@@ -276,22 +277,20 @@ int main() {
   printf("HEIGHT=%d\n", ppm.height);
   printf("COLOR_SIZE=%d\n", ppm.color_size);
   printf("IMAGE_SIZE=%d\n", ppm.image_size);
-
+  double total_time_spent = 0.0;
   dst = (P_SZ *) malloc(ppm.image_size);
-
-  filter_image(ppm.width, ppm.height, ppm.image, dst, 3, FILTER_NAME1);
-  write_ppm_file(ppm, dst, "out1.ppm");
-  filter_image(ppm.width, ppm.height, ppm.image, dst, 3, FILTER_NAME2);
-  write_ppm_file(ppm, dst, "out2.ppm");
-  filter_image(ppm.width, ppm.height, ppm.image, dst, 3, FILTER_NAME3);
-  write_ppm_file(ppm, dst, "out3.ppm");
-  filter_image(ppm.width, ppm.height, ppm.image, dst, 3, FILTER_NAME4);
-  write_ppm_file(ppm, dst, "out4.ppm");
-  filter_image(ppm.width, ppm.height, ppm.image, dst, 3, FILTER_NAME5);
-  write_ppm_file(ppm, dst, "out5.ppm");
-  filter_image(ppm.width, ppm.height, ppm.image, dst, 3, FILTER_NAME6);
-  write_ppm_file(ppm, dst, "out6.ppm");
-
+  for (int i = 1; i <= FILTERS_AMOUNT; ++i) {
+    double time_spent = 0.0;
+    clock_t begin = clock();
+    filter_image(ppm.width, ppm.height, ppm.image, dst, 3, i);
+    clock_t end = clock();
+    time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    total_time_spent += time_spent;
+    printf("Filter #%d. Execution time: %f\n", i, time_spent);
+    sprintf(out_file_name,"filter_out%d.ppm", i);
+    write_ppm_file(ppm, dst, out_file_name);
+  }
+  printf("Total time spent:%f\n", total_time_spent);
   free(ppm.image);
   free(dst);
   return 0;
