@@ -13,7 +13,10 @@
 
 
 
+
 #define PPM_VERSION_SIZE 80
+#define MASK_SIZE 3
+
 #define LINE_SIZE 80
 
 #define FILTER_NAME1 1
@@ -109,76 +112,50 @@ P_SZ clip_color(int color) {
   return (P_SZ) color;
 }
 
-P_SZ filter1(P_SZ p1,
-             P_SZ p2,
-             P_SZ p3,
-             P_SZ p4,
-             P_SZ p5,
-             P_SZ p6,
-             P_SZ p7,
-             P_SZ p8,
-             P_SZ p9) {
+
+P_SZ filter1(P_SZ p1, P_SZ p2, P_SZ p3, P_SZ p4,
+             P_SZ p5, P_SZ p6, P_SZ p7, P_SZ p8, P_SZ p9) {
 
   return clip_color(p4 + 8 * p1 - p2 - p3 - p5 - p6 - p7 - p8 - p9);
 }
-P_SZ filter2(P_SZ p1,
-             P_SZ p2,
-             P_SZ p3,
-             P_SZ p4,
-             P_SZ p5,
-             P_SZ p6,
-             P_SZ p7,
-             P_SZ p8,
-             P_SZ p9) {
+
+P_SZ filter2(P_SZ p1, P_SZ p2, P_SZ p3, P_SZ p4,
+             P_SZ p5, P_SZ p6, P_SZ p7, P_SZ p8, P_SZ p9) {
 
   return (p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9) / FILTER_ITERATION_SIZE;
-    }
-P_SZ filter3(P_SZ p1,
-             P_SZ p2,
-             P_SZ p3,
-             P_SZ p4,
-             P_SZ p5,
-             P_SZ p6,
-             P_SZ p7,
-             P_SZ p8,
-             P_SZ p9) {
+}
 
-  return (p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9) / FILTER_ITERATION_SIZE;
-    }
-P_SZ filter4(P_SZ p1,
-             P_SZ p2,
-             P_SZ p3,
-             P_SZ p4,
-             P_SZ p5,
-             P_SZ p6,
-             P_SZ p7,
-             P_SZ p8,
-             P_SZ p9) {
-  return (p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9) / FILTER_ITERATION_SIZE;
-    }
-P_SZ filter5(P_SZ p1,
-             P_SZ p2,
-             P_SZ p3,
-             P_SZ p4,
-             P_SZ p5,
-             P_SZ p6,
-             P_SZ p7,
-             P_SZ p8,
-             P_SZ p9) {
+P_SZ filter3(P_SZ p1, P_SZ p2, P_SZ p3, P_SZ p4,
+             P_SZ p5, P_SZ p6, P_SZ p7, P_SZ p8, P_SZ p9) {
 
-  return (p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9) / FILTER_ITERATION_SIZE;
-    }
-P_SZ filter6(P_SZ p1,
-             P_SZ p2,
-             P_SZ p3,
-             P_SZ p4,
-             P_SZ p5,
-             P_SZ p6,
-             P_SZ p7,
-             P_SZ p8,
-             P_SZ p9) {
-  return (p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9) / FILTER_ITERATION_SIZE;
-    }
+  P_SZ pixels[9] = {p1, p2, p3, p4, p5, p6, p7, p8, p9};
+  for (int j = 0; j< 8; ++j)
+    for(int i = 0; i < 8; ++i)
+      if (pixels[i] > pixels[i + 1]) {
+        P_SZ t = pixels[i];
+        pixels[i] = pixels[i + 1];
+        pixels[i + 1] = t;
+      }
+  return pixels[4];
+}
+
+P_SZ filter4(P_SZ p, P_SZ p_prev, P_SZ p_mask, int current_x) {
+
+  if (current_x > MASK_SIZE)
+    return clip_color(p + p_prev - p_mask);
+  else
+    return p;
+}
+
+P_SZ filter5(P_SZ p1, P_SZ p2, P_SZ p3, P_SZ p4,
+             P_SZ p5, P_SZ p6, P_SZ p7, P_SZ p8, P_SZ p9) {
+  return clip_color( 9 * p1 - p2 - p3 - p4 - p5 - p6 - p7 - p8 - p9);
+}
+
+P_SZ filter6(P_SZ p1, P_SZ p2, P_SZ p3, P_SZ p4, P_SZ p5) {
+  return clip_color(p1 * 4 - p2 - p3 - p4 - p5);
+
+}
 
 //------------------------------------
 int filter_image(int width,
@@ -189,6 +166,7 @@ int filter_image(int width,
                  int filter) {
 
   const int width_in_bytes = width * pixel_size;
+  const int mask_offset = pixel_size * MASK_SIZE;
 
   for (int y = 1; y < height - 1; ++y) {
     int pixel_offset = width_in_bytes * y;
@@ -250,14 +228,9 @@ int filter_image(int width,
           break;
         case FILTER_NAME4:
           dst[pixel_offset + x + i] = filter4(p,
-                                              p_north,
-                                              p_north_east,
-                                              p_east,
-                                              p_south_east,
-                                              p_south,
-                                              p_south_west,
                                               p_west,
-                                              p_north_west);
+                                              src[pixel_offset + i - mask_offset],
+                                              x);
           break;
         case FILTER_NAME5:
           dst[pixel_offset + x + i] = filter5(p,
@@ -273,13 +246,9 @@ int filter_image(int width,
         case FILTER_NAME6:
           dst[pixel_offset + x + i] = filter6(p,
                                               p_north,
-                                              p_north_east,
                                               p_east,
-                                              p_south_east,
                                               p_south,
-                                              p_south_west,
-                                              p_west,
-                                              p_north_west);
+                                              p_west);
           break;
         default:
           dst[pixel_offset + x + i] = p;
@@ -297,7 +266,8 @@ int filter_image(int width,
 
 int main() {
 
-  char* input_file_name = "Lena.ppm";
+  char* input_file_name = "123.ppm";
+  //char* input_file_name = "Lena.ppm";
   PPM_Struct ppm = read_ppm_file(input_file_name);
   P_SZ *dst;
 
