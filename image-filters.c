@@ -19,23 +19,13 @@ P_SZ filter2(P_SZ p1, P_SZ p2, P_SZ p3, P_SZ p4,
   return (p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9) / FILTER_ITERATION_SIZE;
 }
 
-int cmpfunc (const void * a, const void * b) {
-   return ( *(P_SZ*)a - *(P_SZ*)b );
-}
-
-static inline void swap(P_SZ *a, P_SZ *b) {
-  P_SZ t = *a;
-  *a = *b;
-  *b = t;
-}
 static inline void simple_sort(P_SZ arr[]) {
   for (int j = 0; j< 8; ++j)
     for(int i = 0; i < 8 - j; ++i)
       if (arr[i] > arr[i + 1]) {
         P_SZ t = arr[i];
         arr[i] = arr[i + 1];
-        arr[i + 1] = t;
-	//swap(&arr[i], &arr[i + 1]);
+        arr[i + 1] = t;	
       }
 }
 
@@ -43,8 +33,7 @@ P_SZ filter3(P_SZ p1, P_SZ p2, P_SZ p3, P_SZ p4,
              P_SZ p5, P_SZ p6, P_SZ p7, P_SZ p8, P_SZ p9) {
 
   P_SZ pixels[9] = {p1, p2, p3, p4, p5, p6, p7, p8, p9};
-  simple_sort(pixels);
-  //  qsort(pixels, 9, sizeof(P_SZ), cmpfunc);
+  simple_sort(pixels);  
   return pixels[4];
 }
 
