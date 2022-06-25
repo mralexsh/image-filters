@@ -99,19 +99,33 @@ void write_ppm_file(PPM_Struct ppm, P_SZ *dst, const char *file_path)
 
 
 
-int main() {
-
+int main(int argc, char *argv[]) {
+  char *input_file_name;
   char out_file_name[80];
-  char* input_file_name = "123.ppm";
-  //char* input_file_name = "Lena.ppm";
+  if (argc != 2) {
+    printf("Input PPM file not found.\n");
+    printf("Usage example:\n");
+    printf("./image-filters input.ppm:\n");
+    return 0;
+  } else {
+    input_file_name = argv[1];
+    char *dot = strrchr(input_file_name, '.');
+    if (dot && !(strcmp(dot, ".ppm") || strcmp(dot, ".PPM"))) {
+      printf("Wrong file type. Input  must be a .PPM file .\n");
+    }
+
+  }
   PPM_Struct ppm = read_ppm_file(input_file_name);
   P_SZ *dst;
 
+  /*
   printf("VERSION=%s", ppm.version);
   printf("WIDTH=%d\n", ppm.width);
   printf("HEIGHT=%d\n", ppm.height);
   printf("COLOR_SIZE=%d\n", ppm.color_size);
   printf("IMAGE_SIZE=%d\n", ppm.image_size);
+  */
+  
   double total_time_spent = 0.0;
   dst = (P_SZ *) malloc(ppm.image_size);
   for (int i = 1; i <= FILTERS_AMOUNT; ++i) {
@@ -122,7 +136,7 @@ int main() {
     time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
     total_time_spent += time_spent;
     printf("Filter #%d. Execution time: %f\n", i, time_spent);
-    sprintf(out_file_name,"filter_out%d.ppm", i);
+    sprintf(out_file_name, "filtered_image%d.ppm", i);
     write_ppm_file(ppm, dst, out_file_name);
   }
   printf("Total time spent:%f\n", total_time_spent);
